@@ -13,77 +13,76 @@ Set up AWS SSO (recommended):
 aws configure sso
 ```
 
-Or configure regular AWS credentials:
-```
-aws configure
-```
-
-## 2) Deploy infra
+## 2) Deploy infrastructure
 
 ```
 cd infra
 npm i
-npm run build
 # Build backend jar so the Lambda asset exists
-(cd ../backend && ./gradlew clean shadowJar || ./gradlew.bat clean shadowJar)
-# Set your AWS profile (if using SSO)
+(cd ../backend && ./gradlew clean shadowJar)
+# Set your AWS profile
 export AWS_PROFILE=your-profile-name
+# Deploy both OIDC and main stacks
 npm run deploy
 ```
 
-Copy the stack outputs:
+## 3) Configure frontend environment
 
-- `ApiBaseUrl`
-- `UserPoolId`
-- `UserPoolClientId`
-- `CognitoDomain`
-- `FrontendUrl`
-- `SiteBucketName`
-- `DistributionId`
-
-## 3) Configure Cognito callback URLs
-
-Update the User Pool App Client callback/logout URLs to include `FrontendUrl`.
-
-## 4) Build & upload frontend
-
-Create a `.env` (or set in CI) for Vite:
+Update `frontend/.env.local` with stack outputs:
 
 ```
-VITE_API_BASE_URL=<ApiBaseUrl>
+VITE_ITEMS_API_URL=<ItemsApiBaseUrl>
+VITE_API_BASE_URL=<ItemsApiBaseUrl>
 VITE_COGNITO_USER_POOL_ID=<UserPoolId>
 VITE_COGNITO_CLIENT_ID=<UserPoolClientId>
 VITE_COGNITO_DOMAIN=<CognitoDomain>
 ```
 
-Build and upload:
+## 4) Test locally
 
 ```
-cd ../frontend
+cd frontend
 npm i
-npm run build
-aws s3 sync dist/ s3://<SiteBucketName>
-aws cloudfront create-invalidation --distribution-id <DistributionId> --paths "/*"
+npm run dev
 ```
 
-## 5) GitHub Actions CI
+## 5) GitHub Actions CI/CD
 
-Two workflows are included:
+Two workflows automatically deploy on push:
 
-- `infra-deploy.yml` — builds backend jar and deploys CDK on pushes to `infra` or `backend`.
-- `frontend-deploy.yml` — builds React and deploys to S3 + invalidates CloudFront on pushes to `frontend`.
+- `infra-deploy.yml` — deploys CDK on changes to `infra/` or `backend/`
+- `frontend-deploy.yml` — deploys React on changes to `frontend/`
 
-### Required repo secrets
+### Required GitHub secrets (OIDC)
 
-- `AWS_ACCOUNT_ID` (optional, for scoping)
-- `AWS_REGION` (e.g., `us-east-1`)
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `CDK_STACK_NAME` (e.g., `LacatuStack`)
-- `SITE_BUCKET_NAME` (from stack output `SiteBucketName`)
-- `DISTRIBUTION_ID` (from stack output `DistributionId`)
-- `API_BASE_URL`, `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_DOMAIN` (to inject into Vite build)
+- `AWS_ACCOUNT_ID`
+- `AWS_REGION`
 
-## 6) Test the flow
+The workflows automatically fetch all other values from CloudFormation stack outputs.
 
-Open `FrontendUrl`, login, add an item.
+## 6) Architecture
+
+- **Items API**: DynamoDB + Lambda + API Gateway
+- **Auth**: Cognito User Pool with hosted UI
+- **Frontend**: React + Vite deployed to S3 + CloudFront
+- **Custom Domain**: Route 53 + ACM certificate (optional)
+- **CI/CD**: GitHub Actions with OIDC (no long-lived credentials)
+
+## 7) Adding new services
+
+To add new APIs (orders, users, etc.):
+
+1. Create new constructs: `OrdersDatabase`, `OrdersApi`, `OrdersLambda`
+2. Add stack outputs: `OrdersApiBaseUrl`
+3. Update workflows to inject: `VITE_ORDERS_API_URL`
+4. Reuse existing `Auth` and `Frontend` constructs
+
+## Stack Outputs Reference
+
+- `ItemsApiBaseUrl` - Items API endpoint
+- `UserPoolId` - Cognito User Pool ID
+- `UserPoolClientId` - Cognito App Client ID
+- `CognitoDomain` - Cognito hosted UI domain
+- `FrontendUrl` - CloudFront or custom domain URL
+- `SiteBucketName` - S3 bucket for frontend assets
+- `DistributionId` - CloudFront distribution ID
