@@ -23,6 +23,9 @@ export class Frontend extends Construct {
 
     const oai = new cloudfront.OriginAccessIdentity(this, "OAI");
 
+    // Grant CloudFront OAI access to S3 bucket
+    this.bucket.grantRead(oai);
+
     this.distribution = new cloudfront.Distribution(this, "Distribution", {
       defaultBehavior: {
         origin: new origins.S3Origin(this.bucket, {
