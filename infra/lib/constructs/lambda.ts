@@ -10,7 +10,6 @@ import { dirname, join } from "path";
 export interface LambdaProps {
   tableName: string;
   domainName?: string;
-  subPath?: string;
 }
 
 export class LambdaFunction extends Construct {
@@ -32,11 +31,10 @@ export class LambdaFunction extends Construct {
       ),
       environment: {
         USER_ITEMS_TABLE_NAME: props.tableName,
-        POWERTOOLS_SERVICE_NAME: "lakitu",
-        FRONTEND_ORIGIN:
-          props.subPath && props.domainName
-            ? `http://localhost:5173,https://${props.domainName}`
-            : "http://localhost:5173,https://d3odzc270i77yq.cloudfront.net",
+        POWERTOOLS_SERVICE_NAME: "lacatu",
+        FRONTEND_ORIGIN: props.domainName
+          ? `http://localhost:5173,https://${props.domainName}`
+          : "http://localhost:5173,https://d3odzc270i77yq.cloudfront.net",
       },
     });
   }

@@ -17,15 +17,15 @@ export class Api extends Construct {
     super(scope, id);
 
     this.restApi = new apigw.RestApi(this, "RestApi", {
-      restApiName: "LakituApi",
+      restApiName: "LacatuApi",
       deployOptions: { stageName: "prod" },
     });
 
     // Add CORS headers to gateway responses for auth errors
+    // Note: Real CORS validation happens in Lambda function
     this.restApi.addGatewayResponse("Unauthorized", {
       type: apigw.ResponseType.UNAUTHORIZED,
       responseHeaders: {
-        "Access-Control-Allow-Origin": "'http://localhost:5173'",
         "Access-Control-Allow-Headers": "'Authorization,Content-Type'",
         "Access-Control-Allow-Methods": "'GET,POST,PUT,PATCH,DELETE,OPTIONS'",
       },

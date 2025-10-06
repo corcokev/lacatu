@@ -20,7 +20,7 @@ export default function HomePage({ children }: { children: AuthRenderProp }) {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-4">
       <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Lakitu</h1>
+        <h1 className="mb-4 text-4xl font-bold">Welcome to Lacatu</h1>
         <p className="mb-8 text-lg text-gray-600">
           Your serverless item management app
         </p>

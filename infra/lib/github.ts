@@ -12,7 +12,7 @@ export class GithubOidcStack extends Stack {
     super(scope, id, props);
 
     const githubOrg = "corcokev";
-    const githubRepo = "lakitu";
+    const githubRepo = "lacatu";
     const githubBranch = "main";
 
     // 1) OIDC Provider (create once)
@@ -37,10 +37,10 @@ export class GithubOidcStack extends Stack {
     });
 
     // 3) Role assumed by GitHub Actions
-    const ghRole = new iam.Role(this, "GitHubActionsLakituRole", {
-      roleName: "GitHubActionsLakituRole",
+    const ghRole = new iam.Role(this, "GitHubActionsLacatuRole", {
+      roleName: "GitHubActionsLacatuRole",
       assumedBy: principal,
-      description: "OIDC role used by GitHub Actions to deploy Lakitu via CDK",
+      description: "OIDC role used by GitHub Actions to deploy Lacatu via CDK",
       maxSessionDuration: Duration.hours(1),
     });
 
@@ -64,8 +64,8 @@ export class GithubOidcStack extends Stack {
         resources: ["*"],
         conditions: {
           StringEqualsIfExists: {
-            "aws:RequestTag/Project": "Lakitu",
-            "aws:ResourceTag/Project": "Lakitu",
+            "aws:RequestTag/Project": "Lacatu",
+            "aws:ResourceTag/Project": "Lacatu",
           },
         },
       }),

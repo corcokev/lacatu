@@ -6,17 +6,15 @@ import { Api } from "./constructs/api.js";
 import { Frontend } from "./constructs/frontend.js";
 import { LambdaFunction } from "./constructs/lambda.js";
 import { CustomDomain } from "./constructs/custom-domain.js";
-export interface LakituStackProps extends StackProps {
+export interface LacatuStackProps extends StackProps {
   domainName?: string;
-  hostedZoneId?: string;
 }
 
-export class LakituStack extends Stack {
-  constructor(scope: Construct, id: string, props?: LakituStackProps) {
+export class LacatuStack extends Stack {
+  constructor(scope: Construct, id: string, props?: LacatuStackProps) {
     super(scope, id, props);
 
     const domainName = props?.domainName;
-    const hostedZoneId = props?.hostedZoneId;
 
     // Create constructs
     const database = new Database(this, "Database");
@@ -26,7 +24,6 @@ export class LakituStack extends Stack {
     const customDomain = domainName
       ? new CustomDomain(this, "CustomDomain", {
           domainName,
-          hostedZoneId,
           distribution: frontend.distribution,
         })
       : undefined;
@@ -48,37 +45,37 @@ export class LakituStack extends Stack {
     api.addLambdaIntegration("v1", lambda.handler);
 
     // Outputs
-    new CfnOutput(this, "LakituApiBaseUrl", { value: api.restApi.url });
-    new CfnOutput(this, "LakituItemsTableName", {
+    new CfnOutput(this, "ApiBaseUrl", { value: api.restApi.url });
+    new CfnOutput(this, "ItemsTableName", {
       value: database.userItemsTable.tableName,
     });
-    new CfnOutput(this, "LakituUserPoolId", {
+    new CfnOutput(this, "UserPoolId", {
       value: auth.userPool.userPoolId,
     });
-    new CfnOutput(this, "LakituUserPoolClientId", {
+    new CfnOutput(this, "UserPoolClientId", {
       value: auth.userPoolClient.userPoolClientId,
     });
-    new CfnOutput(this, "LakituCognitoDomain", {
+    new CfnOutput(this, "CognitoDomain", {
       value: auth.domain.baseUrl(),
     });
-    new CfnOutput(this, "LakituFrontendUrl", {
+    new CfnOutput(this, "FrontendUrl", {
       value: customDomain
         ? `https://${customDomain.domainName}`
         : `https://${frontend.distribution.domainName}`,
     });
 
     if (customDomain) {
-      new CfnOutput(this, "LakituHostedZoneId", {
+      new CfnOutput(this, "HostedZoneId", {
         value: customDomain.hostedZone.hostedZoneId,
       });
     }
-    new CfnOutput(this, "LakituCloudFrontUrl", {
+    new CfnOutput(this, "CloudFrontUrl", {
       value: `https://${frontend.distribution.domainName}`,
     });
-    new CfnOutput(this, "LakituSiteBucketName", {
+    new CfnOutput(this, "SiteBucketName", {
       value: frontend.bucket.bucketName,
     });
-    new CfnOutput(this, "LakituDistributionId", {
+    new CfnOutput(this, "DistributionId", {
       value: frontend.distribution.distributionId,
     });
   }

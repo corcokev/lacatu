@@ -1,4 +1,4 @@
-# Lakitu: Serverless Boilerplate (API Gateway + Lambda Java + DynamoDB + Cognito + React)
+# Lacatu: Serverless Boilerplate (API Gateway + Lambda Java + DynamoDB + Cognito + React)
 
 ## Prereqs
 
@@ -79,7 +79,7 @@ Two workflows are included:
 - `AWS_REGION` (e.g., `us-east-1`)
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
-- `CDK_STACK_NAME` (e.g., `LakituStack`)
+- `CDK_STACK_NAME` (e.g., `LacatuStack`)
 - `SITE_BUCKET_NAME` (from stack output `SiteBucketName`)
 - `DISTRIBUTION_ID` (from stack output `DistributionId`)
 - `API_BASE_URL`, `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_DOMAIN` (to inject into Vite build)

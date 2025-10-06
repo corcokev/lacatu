@@ -29,7 +29,7 @@ describe("HomePage", () => {
   it("renders welcome screen initially", () => {
     render(<HomePage>{mockChildren}</HomePage>);
 
-    expect(screen.getByText("Welcome to Lakitu")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to Lacatu")).toBeInTheDocument();
     expect(
       screen.getByText("Your serverless item management app"),
     ).toBeInTheDocument();

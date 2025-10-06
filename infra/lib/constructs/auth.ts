@@ -9,8 +9,7 @@ import {
 
 export interface AuthProps {
   domainName?: string;
-  subPath?: string;
-  distribution?: cloudfront.Distribution;
+  distribution: cloudfront.Distribution;
 }
 
 export class Auth extends Construct {
@@ -18,7 +17,7 @@ export class Auth extends Construct {
   public readonly userPoolClient: cognito.UserPoolClient;
   public readonly domain: cognito.UserPoolDomain;
 
-  constructor(scope: Construct, id: string, props?: AuthProps) {
+  constructor(scope: Construct, id: string, props: AuthProps) {
     super(scope, id);
 
     this.userPool = new cognito.UserPool(this, "UserPool", {
@@ -35,7 +34,7 @@ export class Auth extends Construct {
 
     this.domain = this.userPool.addDomain("Domain", {
       cognitoDomain: {
-        domainPrefix: `lakitu-${scope.node.addr.slice(-6)}`.replace(
+        domainPrefix: `lacatu-${scope.node.addr.slice(-6)}`.replace(
           /[^a-z0-9-]/g,
           "",
         ),
@@ -54,23 +53,19 @@ export class Auth extends Construct {
         scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
         callbackUrls: [
           "http://localhost:5173/",
-          props?.subPath && props?.domainName
-            ? `https://${props.domainName}${props.subPath}/`
-            : props?.distribution
-              ? Lazy.string({
-                  produce: () => `https://${props.distribution!.domainName}/`,
-                })
-              : "https://placeholder.cloudfront.net/",
+          props.domainName
+            ? `https://${props.domainName}/`
+            : Lazy.string({
+                produce: () => `https://${props.distribution.domainName}/`,
+              }),
         ],
         logoutUrls: [
           "http://localhost:5173/",
-          props?.subPath && props?.domainName
-            ? `https://${props.domainName}${props.subPath}/`
-            : props?.distribution
-              ? Lazy.string({
-                  produce: () => `https://${props.distribution!.domainName}/`,
-                })
-              : "https://placeholder.cloudfront.net/",
+          props.domainName
+            ? `https://${props.domainName}/`
+            : Lazy.string({
+                produce: () => `https://${props.distribution.domainName}/`,
+              }),
         ],
       },
     });

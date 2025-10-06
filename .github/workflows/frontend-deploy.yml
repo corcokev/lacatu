@@ -6,10 +6,53 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend-deploy.yml"
+  workflow_run:
+    workflows: ["Infra Deploy"]
+    types:
+      - completed
 
 jobs:
+  get-infra-outputs:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      api-base-url: ${{ steps.outputs.outputs.api-base-url }}
+      user-pool-id: ${{ steps.outputs.outputs.user-pool-id }}
+      client-id: ${{ steps.outputs.outputs.client-id }}
+      cognito-domain: ${{ steps.outputs.outputs.cognito-domain }}
+      site-bucket: ${{ steps.outputs.outputs.site-bucket }}
+      distribution-id: ${{ steps.outputs.outputs.distribution-id }}
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsLacatuRole
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get stack outputs
+        id: outputs
+        run: |
+          API_BASE_URL=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`ApiBaseUrl`].OutputValue' --output text)
+          USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)
+          CLIENT_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' --output text)
+          COGNITO_DOMAIN=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`CognitoDomain`].OutputValue' --output text)
+          SITE_BUCKET=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`SiteBucketName`].OutputValue' --output text)
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' --output text)
+          
+          echo "api-base-url=$API_BASE_URL" >> $GITHUB_OUTPUT
+          echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
+          echo "client-id=$CLIENT_ID" >> $GITHUB_OUTPUT
+          echo "cognito-domain=$COGNITO_DOMAIN" >> $GITHUB_OUTPUT
+          echo "site-bucket=$SITE_BUCKET" >> $GITHUB_OUTPUT
+          echo "distribution-id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+
   deploy:
     runs-on: ubuntu-latest
+    needs: [get-infra-outputs]
+    if: always() && (github.event_name == 'push' || needs.get-infra-outputs.result == 'success')
     permissions:
       id-token: write
       contents: read
@@ -24,7 +67,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsLakituRole
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsLacatuRole
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install dependencies
@@ -42,19 +85,44 @@ jobs:
           cd frontend
           npm run lint
 
+      - name: Get stack outputs (for push events)
+        if: github.event_name == 'push'
+        id: stack-outputs
+        run: |
+          API_BASE_URL=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`ApiBaseUrl`].OutputValue' --output text)
+          USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)
+          CLIENT_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' --output text)
+          COGNITO_DOMAIN=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`CognitoDomain`].OutputValue' --output text)
+          SITE_BUCKET=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`SiteBucketName`].OutputValue' --output text)
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' --output text)
+          
+          echo "api-base-url=$API_BASE_URL" >> $GITHUB_OUTPUT
+          echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
+          echo "client-id=$CLIENT_ID" >> $GITHUB_OUTPUT
+          echo "cognito-domain=$COGNITO_DOMAIN" >> $GITHUB_OUTPUT
+          echo "site-bucket=$SITE_BUCKET" >> $GITHUB_OUTPUT
+          echo "distribution-id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+
       - name: Build frontend
         run: |
           cd frontend
-          echo "VITE_API_BASE_URL=${{ secrets.API_BASE_URL }}" >> .env
-          echo "VITE_COGNITO_USER_POOL_ID=${{ secrets.COGNITO_USER_POOL_ID }}" >> .env
-          echo "VITE_COGNITO_CLIENT_ID=${{ secrets.COGNITO_CLIENT_ID }}" >> .env
-          echo "VITE_COGNITO_DOMAIN=${{ secrets.COGNITO_DOMAIN }}" >> .env
+          API_URL=${{ github.event_name == 'push' && steps.stack-outputs.outputs.api-base-url || needs.get-infra-outputs.outputs.api-base-url }}
+          USER_POOL=${{ github.event_name == 'push' && steps.stack-outputs.outputs.user-pool-id || needs.get-infra-outputs.outputs.user-pool-id }}
+          CLIENT_ID=${{ github.event_name == 'push' && steps.stack-outputs.outputs.client-id || needs.get-infra-outputs.outputs.client-id }}
+          COGNITO_DOMAIN=${{ github.event_name == 'push' && steps.stack-outputs.outputs.cognito-domain || needs.get-infra-outputs.outputs.cognito-domain }}
+          
+          echo "VITE_API_BASE_URL=$API_URL" >> .env
+          echo "VITE_COGNITO_USER_POOL_ID=$USER_POOL" >> .env
+          echo "VITE_COGNITO_CLIENT_ID=$CLIENT_ID" >> .env
+          echo "VITE_COGNITO_DOMAIN=$COGNITO_DOMAIN" >> .env
           npm run build
 
       - name: Upload to S3
         run: |
-          aws s3 sync frontend/dist/ s3://${{ secrets.SITE_BUCKET_NAME }} --delete
+          BUCKET=${{ github.event_name == 'push' && steps.stack-outputs.outputs.site-bucket || needs.get-infra-outputs.outputs.site-bucket }}
+          aws s3 sync frontend/dist/ s3://$BUCKET --delete
 
       - name: Invalidate CloudFront
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/*"
+          DIST_ID=${{ github.event_name == 'push' && steps.stack-outputs.outputs.distribution-id || needs.get-infra-outputs.outputs.distribution-id }}
+          aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"

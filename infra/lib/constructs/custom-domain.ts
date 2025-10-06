@@ -8,7 +8,6 @@ import {
 
 export interface CustomDomainProps {
   domainName: string;
-  hostedZoneId?: string;
   distribution: cloudfront.Distribution;
 }
 
@@ -22,21 +21,10 @@ export class CustomDomain extends Construct {
 
     this.domainName = props.domainName;
 
-    // Get or create hosted zone
-    if (props.hostedZoneId) {
-      this.hostedZone = route53.HostedZone.fromHostedZoneAttributes(
-        this,
-        "HostedZone",
-        {
-          hostedZoneId: props.hostedZoneId,
-          zoneName: props.domainName,
-        },
-      );
-    } else {
-      this.hostedZone = new route53.HostedZone(this, "HostedZone", {
-        zoneName: props.domainName,
-      });
-    }
+    // Look up existing hosted zone
+    this.hostedZone = route53.HostedZone.fromLookup(this, "HostedZone", {
+      domainName: props.domainName,
+    });
 
     // Create SSL certificate
     this.certificate = new acm.Certificate(this, "Certificate", {
