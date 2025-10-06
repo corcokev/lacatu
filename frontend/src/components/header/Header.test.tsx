@@ -16,7 +16,7 @@ describe("Header", () => {
   it("renders app title and logo", () => {
     render(<Header user={undefined} signOut={undefined} />);
 
-    expect(screen.getByText("Lacatu App")).toBeInTheDocument();
+    expect(screen.getByText("Lacatu")).toBeInTheDocument();
     expect(screen.getByRole("img")).toBeInTheDocument();
   });
 
