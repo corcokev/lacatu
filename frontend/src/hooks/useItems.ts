@@ -27,12 +27,24 @@ export function useItems() {
   }
 
   async function add(value: string) {
+    // Optimistic update
+    const tempId = `temp-${Date.now()}`;
+    const optimisticItem: Item = {
+      item_id: tempId,
+      value,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    };
+    setItems((prev) => [...prev, optimisticItem]);
+
     setSaving(true);
     setError(null);
     try {
       await createItem(value);
-      await load();
+      await load(); // Refresh to get real item with server ID
     } catch (e: unknown) {
+      // Revert optimistic update on error
+      setItems((prev) => prev.filter((item) => item.item_id !== tempId));
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
@@ -40,12 +52,20 @@ export function useItems() {
   }
 
   async function update(itemId: string, value: string) {
+    // Optimistic update
+    const originalItems = items;
+    setItems((prev) =>
+      prev.map((item) => (item.item_id === itemId ? { ...item, value, updated_at: Date.now() } : item)),
+    );
+
     setSaving(true);
     setError(null);
     try {
       await updateItem(itemId, value);
-      await load();
+      await load(); // Refresh to ensure consistency
     } catch (e: unknown) {
+      // Revert optimistic update on error
+      setItems(originalItems);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
@@ -53,12 +73,18 @@ export function useItems() {
   }
 
   async function remove(itemId: string) {
+    // Optimistic update
+    const originalItems = items;
+    setItems((prev) => prev.filter((item) => item.item_id !== itemId));
+
     setSaving(true);
     setError(null);
     try {
       await deleteItem(itemId);
-      await load();
+      // No need to reload after successful delete
     } catch (e: unknown) {
+      // Revert optimistic update on error
+      setItems(originalItems);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
