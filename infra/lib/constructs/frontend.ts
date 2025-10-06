@@ -5,7 +5,6 @@ import {
   aws_s3 as s3,
   aws_cloudfront as cloudfront,
   aws_cloudfront_origins as origins,
-  aws_s3_deployment as s3deploy,
 } from "aws-cdk-lib";
 
 export class Frontend extends Construct {
@@ -47,17 +46,6 @@ export class Frontend extends Construct {
           responsePagePath: "/index.html",
         },
       ],
-    });
-
-    new s3deploy.BucketDeployment(this, "DeploySitePlaceholder", {
-      sources: [
-        s3deploy.Source.data(
-          "index.html",
-          "<html><body>Deploy frontend to S3</body></html>",
-        ),
-      ],
-      destinationBucket: this.bucket,
-      distribution: this.distribution,
     });
   }
 }

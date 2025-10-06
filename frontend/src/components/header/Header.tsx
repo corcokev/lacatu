@@ -13,7 +13,7 @@ export default function Header({
   return (
     <header className="gap- flex items-center justify-between">
       <div className="flex items-center">
-        <h1 className="m-0 text-2xl font-semibold">Lacatu App</h1>
+        <h1 className="m-0 text-2xl font-semibold">Lacatu</h1>
         <img className="max-w-15" src={LacatuLogo}></img>
       </div>
       <div className="flex items-center">
