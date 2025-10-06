@@ -71,8 +71,12 @@ describe("useItems", () => {
 
     // Should immediately show optimistic item
     expect(result.current.items.length).toBe(initialItemCount + 1);
-    expect(result.current.items[result.current.items.length - 1].value).toBe("New Item");
-    expect(result.current.items[result.current.items.length - 1].item_id).toMatch(/^temp-/);
+    expect(result.current.items[result.current.items.length - 1].value).toBe(
+      "New Item",
+    );
+    expect(
+      result.current.items[result.current.items.length - 1].item_id,
+    ).toMatch(/^temp-/);
 
     await waitFor(() => {
       expect(result.current.saving).toBe(false);
@@ -121,7 +125,9 @@ describe("useItems", () => {
     });
 
     // Should immediately show updated value
-    const updatedItem = result.current.items.find(item => item.item_id === "1");
+    const updatedItem = result.current.items.find(
+      (item) => item.item_id === "1",
+    );
     expect(updatedItem?.value).toBe("Updated Item");
 
     await waitFor(() => {
@@ -150,7 +156,9 @@ describe("useItems", () => {
 
     // Should immediately remove item
     expect(result.current.items.length).toBe(initialItemCount - 1);
-    expect(result.current.items.find(item => item.item_id === "1")).toBeUndefined();
+    expect(
+      result.current.items.find((item) => item.item_id === "1"),
+    ).toBeUndefined();
 
     await waitFor(() => {
       expect(result.current.saving).toBe(false);
@@ -170,14 +178,18 @@ describe("useItems", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const originalValue = result.current.items.find(item => item.item_id === "1")?.value;
+    const originalValue = result.current.items.find(
+      (item) => item.item_id === "1",
+    )?.value;
 
     await act(async () => {
       await result.current.update("1", "Updated Item");
     });
 
     // Should revert to original value after error
-    const revertedItem = result.current.items.find(item => item.item_id === "1");
+    const revertedItem = result.current.items.find(
+      (item) => item.item_id === "1",
+    );
     expect(revertedItem?.value).toBe(originalValue);
     expect(result.current.error).toBe("Failed to update");
   });
@@ -201,7 +213,9 @@ describe("useItems", () => {
 
     // Should restore deleted item after error
     expect(result.current.items.length).toBe(initialItemCount);
-    expect(result.current.items.find(item => item.item_id === "1")).toBeDefined();
+    expect(
+      result.current.items.find((item) => item.item_id === "1"),
+    ).toBeDefined();
     expect(result.current.error).toBe("Failed to delete");
   });
 

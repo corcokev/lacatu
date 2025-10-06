@@ -55,7 +55,11 @@ export function useItems() {
     // Optimistic update
     const originalItems = items;
     setItems((prev) =>
-      prev.map((item) => (item.item_id === itemId ? { ...item, value, updated_at: Date.now() } : item)),
+      prev.map((item) =>
+        item.item_id === itemId
+          ? { ...item, value, updated_at: Date.now() }
+          : item,
+      ),
     );
 
     setSaving(true);
