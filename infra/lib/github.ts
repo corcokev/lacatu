@@ -11,8 +11,8 @@ export class GithubOidcStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const githubOrg = "corcokev";
-    const githubRepo = "lacatu";
+    const githubOrg = "corcokev"; // Update this to your GitHub username
+    const githubRepo = "lacatu"; // Update this to your actual repo name
     const githubBranch = "main";
 
     // 1) OIDC Provider (create once)

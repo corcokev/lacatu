@@ -2,5 +2,13 @@
   "hosted-zone:account=066683141697:domainName=lacatu-cloud.com:region=us-east-1": {
     "Id": "/hostedzone/Z0487440SN8ORLX88VXQ",
     "Name": "lacatu-cloud.com."
+  },
+  "hosted-zone:account=066683141697:domainName=lakitu-cloud.com:region=us-east-1": {
+    "Id": "/hostedzone/Z0487440SN8ORLX88VXQ",
+    "Name": "lakitu-cloud.com."
+  },
+  "hosted-zone:account=066683141697:domainName=lacatu.com:region=us-east-1": {
+    "Id": "/hostedzone/Z0769812XGBZDAM2A3QU",
+    "Name": "lacatu.com."
   }
 }
