@@ -6,6 +6,7 @@ import { Api } from "./constructs/api.js";
 import { Frontend } from "./constructs/frontend.js";
 import { LambdaFunction } from "./constructs/lambda.js";
 import { CustomDomain } from "./constructs/custom-domain.js";
+
 export interface LacatuStackProps extends StackProps {
   domainName?: string;
 }
@@ -16,31 +17,28 @@ export class LacatuStack extends Stack {
 
     const domainName = props?.domainName;
 
-    // Create constructs
-    const itemsDatabase = new Database(this, "ItemsDatabase");
+    // Set up website and auth
     const frontend = new Frontend(this, "Frontend");
-
-    // Custom domain setup
     const customDomain = domainName
       ? new CustomDomain(this, "CustomDomain", {
           domainName,
           distribution: frontend.distribution,
         })
       : undefined;
-
     const auth = new Auth(this, "Auth", {
       domainName: customDomain?.domainName,
       distribution: frontend.distribution,
     });
+
+    // Create items API
+    const itemsDatabase = new Database(this, "ItemsDatabase");
     const itemsApi = new Api(this, "ItemsApi", { userPool: auth.userPool });
     const itemsLambda = new LambdaFunction(this, "ItemsLambda", {
       tableName: itemsDatabase.userItemsTable.tableName,
       domainName: customDomain?.domainName,
     });
-
     // Grant permissions
     itemsLambda.grantTableAccess(itemsDatabase.userItemsTable);
-
     // Add API integration
     itemsApi.addLambdaIntegration("v1", itemsLambda.handler);
 

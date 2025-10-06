@@ -12,7 +12,7 @@ export default function Items() {
 
       <div className="w-1/2">
         {items.map((item) => (
-          <div key={item.item_id} className="mb-2 rounded-lg">
+          <div key={item.itemId} className="mb-2 rounded-lg">
             <ItemRow item={item} onUpdate={update} onRemove={remove} />
           </div>
         ))}

@@ -13,8 +13,8 @@ vi.mock("../services/itemsService", () => ({
 
 describe("useItems", () => {
   const mockItems: Item[] = [
-    { item_id: "1", value: "Test Item 1", created_at: 1000, updated_at: 1000 },
-    { item_id: "2", value: "Test Item 2", created_at: 2000, updated_at: 2000 },
+    { itemId: "1", value: "Test Item 1", createdAt: 1000, updatedAt: 1000 },
+    { itemId: "2", value: "Test Item 2", createdAt: 2000, updatedAt: 2000 },
   ];
 
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe("useItems", () => {
       "New Item",
     );
     expect(
-      result.current.items[result.current.items.length - 1].item_id,
+      result.current.items[result.current.items.length - 1].itemId,
     ).toMatch(/^temp-/);
 
     await waitFor(() => {
@@ -126,7 +126,7 @@ describe("useItems", () => {
 
     // Should immediately show updated value
     const updatedItem = result.current.items.find(
-      (item) => item.item_id === "1",
+      (item) => item.itemId === "1",
     );
     expect(updatedItem?.value).toBe("Updated Item");
 
@@ -157,7 +157,7 @@ describe("useItems", () => {
     // Should immediately remove item
     expect(result.current.items.length).toBe(initialItemCount - 1);
     expect(
-      result.current.items.find((item) => item.item_id === "1"),
+      result.current.items.find((item) => item.itemId === "1"),
     ).toBeUndefined();
 
     await waitFor(() => {
@@ -179,7 +179,7 @@ describe("useItems", () => {
     });
 
     const originalValue = result.current.items.find(
-      (item) => item.item_id === "1",
+      (item) => item.itemId === "1",
     )?.value;
 
     await act(async () => {
@@ -188,7 +188,7 @@ describe("useItems", () => {
 
     // Should revert to original value after error
     const revertedItem = result.current.items.find(
-      (item) => item.item_id === "1",
+      (item) => item.itemId === "1",
     );
     expect(revertedItem?.value).toBe(originalValue);
     expect(result.current.error).toBe("Failed to update");
@@ -214,7 +214,7 @@ describe("useItems", () => {
     // Should restore deleted item after error
     expect(result.current.items.length).toBe(initialItemCount);
     expect(
-      result.current.items.find((item) => item.item_id === "1"),
+      result.current.items.find((item) => item.itemId === "1"),
     ).toBeDefined();
     expect(result.current.error).toBe("Failed to delete");
   });

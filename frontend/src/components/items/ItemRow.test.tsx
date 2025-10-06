@@ -5,10 +5,10 @@ import type { Item } from "../../services/itemsService";
 import ItemRow from "./ItemRow";
 
 const mockItem: Item = {
-  item_id: "123",
+  itemId: "123",
   value: "Test item",
-  created_at: 1234567890123,
-  updated_at: 1234567890123,
+  createdAt: 1234567890123,
+  updatedAt: 1234567890123,
 };
 
 describe("ItemRow", () => {

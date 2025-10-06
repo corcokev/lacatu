@@ -25,7 +25,7 @@ export default function ItemRow({ item, onUpdate, onRemove }: ItemRowProps) {
 
   function handleSave() {
     if (!editValue.trim()) return;
-    onUpdate(item.item_id, editValue);
+    onUpdate(item.itemId, editValue);
     setIsEditing(false);
   }
 
@@ -54,7 +54,7 @@ export default function ItemRow({ item, onUpdate, onRemove }: ItemRowProps) {
       <div className="flex-1 rounded-lg border px-3 py-2">{item.value}</div>
       <div className="flex gap-2">
         <Button onClick={startEdit}>Edit</Button>
-        <Button variant="destructive" onClick={() => onRemove(item.item_id)}>
+        <Button variant="destructive" onClick={() => onRemove(item.itemId)}>
           Delete
         </Button>
       </div>

@@ -24,8 +24,8 @@ describe("itemsService", () => {
   describe("getItems", () => {
     it("fetches and sorts items correctly", async () => {
       const mockItems: Item[] = [
-        { item_id: "2", value: "Second", created_at: 2000, updated_at: 2000 },
-        { item_id: "1", value: "First", created_at: 1000, updated_at: 1000 },
+        { itemId: "2", value: "Second", createdAt: 2000, updatedAt: 2000 },
+        { itemId: "1", value: "First", createdAt: 1000, updatedAt: 1000 },
       ];
 
       mockAuthorizedFetch.mockResolvedValue({
@@ -39,8 +39,8 @@ describe("itemsService", () => {
         method: "GET",
       });
       expect(result).toEqual([
-        { item_id: "1", value: "First", created_at: 1000, updated_at: 1000 },
-        { item_id: "2", value: "Second", created_at: 2000, updated_at: 2000 },
+        { itemId: "1", value: "First", createdAt: 1000, updatedAt: 1000 },
+        { itemId: "2", value: "Second", createdAt: 2000, updatedAt: 2000 },
       ]);
     });
 

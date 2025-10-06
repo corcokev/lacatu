@@ -30,10 +30,10 @@ export function useItems() {
     // Optimistic update
     const tempId = `temp-${Date.now()}`;
     const optimisticItem: Item = {
-      item_id: tempId,
+      itemId: tempId,
       value,
-      created_at: Date.now(),
-      updated_at: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
     setItems((prev) => [...prev, optimisticItem]);
 
@@ -44,7 +44,7 @@ export function useItems() {
       await load(); // Refresh to get real item with server ID
     } catch (e: unknown) {
       // Revert optimistic update on error
-      setItems((prev) => prev.filter((item) => item.item_id !== tempId));
+      setItems((prev) => prev.filter((item) => item.itemId !== tempId));
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
@@ -56,8 +56,8 @@ export function useItems() {
     const originalItems = items;
     setItems((prev) =>
       prev.map((item) =>
-        item.item_id === itemId
-          ? { ...item, value, updated_at: Date.now() }
+        item.itemId === itemId
+          ? { ...item, value, updatedAt: Date.now() }
           : item,
       ),
     );
@@ -79,7 +79,7 @@ export function useItems() {
   async function remove(itemId: string) {
     // Optimistic update
     const originalItems = items;
-    setItems((prev) => prev.filter((item) => item.item_id !== itemId));
+    setItems((prev) => prev.filter((item) => item.itemId !== itemId));
 
     setSaving(true);
     setError(null);

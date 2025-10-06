@@ -12,7 +12,7 @@ public final class ObjectMapperModule {
   @Singleton
   static ObjectMapper provideObjectMapper() {
     final ObjectMapper mapper = new ObjectMapper();
-    mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+    mapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
     return mapper;
   }
 }

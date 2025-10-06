@@ -1,10 +1,10 @@
 import { authorizedFetch } from "../auth";
 
 export type Item = {
-  item_id: string;
+  itemId: string;
   value: string;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 };
 
 export async function getItems(): Promise<Item[]> {
@@ -12,7 +12,7 @@ export async function getItems(): Promise<Item[]> {
   if (!res.ok) throw new Error(`GET /v1/items failed (${res.status})`);
   const data = await res.json();
   const itemsArray = Array.isArray(data.items) ? data.items : [];
-  return itemsArray.sort((a: Item, b: Item) => a.created_at - b.created_at);
+  return itemsArray.sort((a: Item, b: Item) => a.createdAt - b.createdAt);
 }
 
 export async function createItem(value: string): Promise<void> {

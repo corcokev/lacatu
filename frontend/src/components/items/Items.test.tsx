@@ -11,16 +11,16 @@ vi.mock("../../hooks/useItems", () => ({
 
 const mockItems: Item[] = [
   {
-    item_id: "1",
+    itemId: "1",
     value: "Item 1",
-    created_at: 1234567890123,
-    updated_at: 1234567890123,
+    createdAt: 1234567890123,
+    updatedAt: 1234567890123,
   },
   {
-    item_id: "2",
+    itemId: "2",
     value: "Item 2",
-    created_at: 1234567890124,
-    updated_at: 1234567890124,
+    createdAt: 1234567890124,
+    updatedAt: 1234567890124,
   },
 ];
 
