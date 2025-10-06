@@ -1,30 +1,17 @@
-import { useEffect, useState } from "react";
-import Items from "./components/Items";
-import LoginButton from "./components/LoginButton";
-import LogoutButton from "./components/LogoutButton";
-import { initAuth, getUserSub } from "./auth";
-
-initAuth();
+// src/App.tsx
+import Items from "./components/items/Items";
+import Header from "./components/header/Header";
+import HomePage from "./components/home/HomePage";
 
 export default function App() {
-  const [user, setUser] = useState<string | null>(null);
-  useEffect(() => {
-    getUserSub().then(setUser);
-  }, []);
-
   return (
-    <main style={{ padding: 24 }}>
-      <h1>Lakitu</h1>
-      <div style={{ marginBottom: 16 }}>
-        {user ? (
-          <>
-            <span>Logged in as: {user}</span> <LogoutButton />
-          </>
-        ) : (
-          <LoginButton />
-        )}
-      </div>
-      {user ? <Items /> : <p>Please log in to manage your items.</p>}
-    </main>
+    <HomePage>
+      {(props) => (
+        <main className="mx-auto flex max-w-3/4 flex-col gap-4 p-4">
+          <Header user={props.user} signOut={props.signOut} />
+          <Items />
+        </main>
+      )}
+    </HomePage>
   );
 }

@@ -31,7 +31,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsLakituRole
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsLacatuRole
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Build backend (shadowJar)
@@ -51,6 +51,35 @@ jobs:
 
       - name: CDK deploy (app only)
         working-directory: infra
+        env:
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+          HOSTED_ZONE_ID: ${{ secrets.HOSTED_ZONE_ID }}
         run: |
           npm run build
-          npx cdk deploy LakituStack --require-approval never
+          npx cdk deploy LacatuStack --require-approval never
+
+      - name: Get stack outputs
+        id: outputs
+        run: |
+          cd infra
+          API_BASE_URL=$(npx cdk list --json | jq -r '.[] | select(.name=="LacatuStack") | .outputs.ApiBaseUrl // empty')
+          USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)
+          CLIENT_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' --output text)
+          COGNITO_DOMAIN=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`CognitoDomain`].OutputValue' --output text)
+          SITE_BUCKET=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`SiteBucketName`].OutputValue' --output text)
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' --output text)
+          
+          echo "api-base-url=$API_BASE_URL" >> $GITHUB_OUTPUT
+          echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
+          echo "client-id=$CLIENT_ID" >> $GITHUB_OUTPUT
+          echo "cognito-domain=$COGNITO_DOMAIN" >> $GITHUB_OUTPUT
+          echo "site-bucket=$SITE_BUCKET" >> $GITHUB_OUTPUT
+          echo "distribution-id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+
+    outputs:
+      api-base-url: ${{ steps.outputs.outputs.api-base-url }}
+      user-pool-id: ${{ steps.outputs.outputs.user-pool-id }}
+      client-id: ${{ steps.outputs.outputs.client-id }}
+      cognito-domain: ${{ steps.outputs.outputs.cognito-domain }}
+      site-bucket: ${{ steps.outputs.outputs.site-bucket }}
+      distribution-id: ${{ steps.outputs.outputs.distribution-id }}

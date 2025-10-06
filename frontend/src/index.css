@@ -1,0 +1,23 @@
+@import url("https://fonts.googleapis.com/css2?family=Corben&family=Rubik:ital,wght@0,300;0,400;0,500;1,400;1,500&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2c2a2e;
+  --color-secondary: #211f22;
+  --color-mgreen: #a8dc76;
+}
+
+html,
+body,
+#root .app {
+  width: 100%;
+  height: 100%;
+  font-family: "Rubik", sans-serif;
+  @apply bg-primary;
+  @apply text-white;
+}
+
+.logo {
+  max-height: 10%;
+  width: 10%;
+}

@@ -1,193 +1,82 @@
-import {
-  Stack,
-  StackProps,
-  CfnOutput,
-  Duration,
-  RemovalPolicy,
-  Lazy,
-  aws_lambda as lambda,
-  aws_dynamodb as dynamodb,
-  aws_cognito as cognito,
-  aws_s3 as s3,
-  aws_cloudfront as cloudfront,
-  aws_cloudfront_origins as origins,
-  aws_s3_deployment as s3deploy,
-  aws_apigateway as apigw,
-} from "aws-cdk-lib";
+import { Stack, StackProps, CfnOutput } from "aws-cdk-lib";
 import { Construct } from "constructs";
+import { Database } from "./constructs/database.js";
+import { Auth } from "./constructs/auth.js";
+import { Api } from "./constructs/api.js";
+import { Frontend } from "./constructs/frontend.js";
+import { LambdaFunction } from "./constructs/lambda.js";
+import { CustomDomain } from "./constructs/custom-domain.js";
+export interface LacatuStackProps extends StackProps {
+  domainName?: string;
+}
 
-export class LakituStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+export class LacatuStack extends Stack {
+  constructor(scope: Construct, id: string, props?: LacatuStackProps) {
     super(scope, id, props);
 
-    // 1) Data: DynamoDB single-table
-    const table = new dynamodb.Table(this, "UserItems", {
-      partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
-      sortKey: { name: "itemId", type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.DESTROY,
-      pointInTimeRecovery: false,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    const domainName = props?.domainName;
+
+    // Create constructs
+    const database = new Database(this, "Database");
+    const frontend = new Frontend(this, "Frontend");
+
+    // Custom domain setup
+    const customDomain = domainName
+      ? new CustomDomain(this, "CustomDomain", {
+          domainName,
+          distribution: frontend.distribution,
+        })
+      : undefined;
+
+    const auth = new Auth(this, "Auth", {
+      domainName: customDomain?.domainName,
+      distribution: frontend.distribution,
+    });
+    const api = new Api(this, "Api", { userPool: auth.userPool });
+    const lambda = new LambdaFunction(this, "Lambda", {
+      tableName: database.userItemsTable.tableName,
+      domainName: customDomain?.domainName,
     });
 
-    // 2) Auth: Cognito User Pool + Client (Hosted UI / PKCE)
-    const userPool = new cognito.UserPool(this, "UserPool", {
-      selfSignUpEnabled: true,
-      signInAliases: { email: true },
-      standardAttributes: { email: { required: true, mutable: false } },
-      passwordPolicy: {
-        minLength: 8,
-        requireLowercase: true,
-        requireDigits: true,
-      },
-      removalPolicy: RemovalPolicy.DESTROY,
+    // Grant permissions
+    lambda.grantTableAccess(database.userItemsTable);
+
+    // Add API integration
+    api.addLambdaIntegration("v1", lambda.handler);
+
+    // Outputs
+    new CfnOutput(this, "ApiBaseUrl", { value: api.restApi.url });
+    new CfnOutput(this, "ItemsTableName", {
+      value: database.userItemsTable.tableName,
+    });
+    new CfnOutput(this, "UserPoolId", {
+      value: auth.userPool.userPoolId,
+    });
+    new CfnOutput(this, "UserPoolClientId", {
+      value: auth.userPoolClient.userPoolClientId,
+    });
+    new CfnOutput(this, "CognitoDomain", {
+      value: auth.domain.baseUrl(),
+    });
+    new CfnOutput(this, "FrontendUrl", {
+      value: customDomain
+        ? `https://${customDomain.domainName}`
+        : `https://${frontend.distribution.domainName}`,
     });
 
-    const domain = userPool.addDomain("Domain", {
-      cognitoDomain: {
-        domainPrefix: `lakitu-${this.account.slice(-6)}-${this.region}`.replace(
-          /[^a-z0-9-]/g,
-          ""
-        ),
-      },
+    if (customDomain) {
+      new CfnOutput(this, "HostedZoneId", {
+        value: customDomain.hostedZone.hostedZoneId,
+      });
+    }
+    new CfnOutput(this, "CloudFrontUrl", {
+      value: `https://${frontend.distribution.domainName}`,
     });
-
-    const userPoolClient = new cognito.UserPoolClient(this, "UserPoolClient", {
-      userPool,
-      generateSecret: false,
-      authSessionValidity: Duration.minutes(5),
-      supportedIdentityProviders: [
-        cognito.UserPoolClientIdentityProvider.COGNITO,
-      ],
-      oAuth: {
-        flows: { authorizationCodeGrant: true },
-        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
-        callbackUrls: [
-          "http://localhost:5173/",
-          Lazy.string({ produce: () => `https://${dist.domainName}/` }),
-        ],
-        logoutUrls: [
-          "http://localhost:5173/",
-          Lazy.string({ produce: () => `https://${dist.domainName}/` }),
-        ],
-      },
+    new CfnOutput(this, "SiteBucketName", {
+      value: frontend.bucket.bucketName,
     });
-
-    // 3) Compute: Lambda (Java 21) single router handler
-    const handler = new lambda.Function(this, "ApiHandler", {
-      runtime: lambda.Runtime.JAVA_21,
-      memorySize: 512,
-      timeout: Duration.seconds(10),
-      handler: "app.handlers.RouterHandler::handleRequest",
-      // Build your fat jar locally into ../backend/build/libs first (shadowJar),
-      // then CDK will pick it up here:
-      code: lambda.Code.fromAsset("../backend/build/libs"),
-      environment: {
-        TABLE_NAME: table.tableName,
-        POWERTOOLS_SERVICE_NAME: "lakitu",
-      },
+    new CfnOutput(this, "DistributionId", {
+      value: frontend.distribution.distributionId,
     });
-    table.grantReadWriteData(handler);
-
-    // 4) API: REST API (L2) + Cognito User Pools Authorizer (L2)
-    const api = new apigw.RestApi(this, "RestApi", {
-      restApiName: "LakituApi",
-      deployOptions: { stageName: "prod" },
-      defaultCorsPreflightOptions: {
-        allowOrigins: [
-          Lazy.string({ produce: () => `https://${dist.domainName}/` }),
-        ],
-        allowHeaders: ["Authorization", "Content-Type"],
-        allowMethods: apigw.Cors.ALL_METHODS,
-      },
-    });
-
-    const authorizer = new apigw.CognitoUserPoolsAuthorizer(
-      this,
-      "CognitoAuthorizer",
-      {
-        cognitoUserPools: [userPool],
-      }
-    );
-
-    const lambdaIntegration = new apigw.LambdaIntegration(handler, {
-      proxy: true,
-    });
-
-    // We expose a proxy under /v1 to let the Lambda route internally.
-    const v1 = api.root.addResource("v1");
-    const proxy = v1.addResource("{proxy+}");
-
-    // Protect all routes under /v1/* with Cognito
-    proxy.addMethod("ANY", lambdaIntegration, {
-      authorizationType: apigw.AuthorizationType.COGNITO,
-      authorizer,
-    });
-
-    // Optionally, also protect /v1 itself (no trailing path)
-    v1.addMethod("ANY", lambdaIntegration, {
-      authorizationType: apigw.AuthorizationType.COGNITO,
-      authorizer,
-    });
-
-    // 5) Static Hosting: S3 + CloudFront (OAI only, pure L2)
-    const siteBucket = new s3.Bucket(this, "SiteBucket", {
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      removalPolicy: RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
-    });
-
-    const oai = new cloudfront.OriginAccessIdentity(this, "OAI");
-
-    const dist = new cloudfront.Distribution(this, "Distribution", {
-      defaultBehavior: {
-        origin: new origins.S3Origin(siteBucket, { originAccessIdentity: oai }),
-        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-      },
-      defaultRootObject: "index.html",
-      errorResponses: [
-        {
-          httpStatus: 403,
-          responseHttpStatus: 200,
-          ttl: Duration.seconds(0),
-          responsePagePath: "/index.html",
-        },
-        {
-          httpStatus: 404,
-          responseHttpStatus: 200,
-          ttl: Duration.seconds(0),
-          responsePagePath: "/index.html",
-        },
-      ],
-    });
-
-    new s3deploy.BucketDeployment(this, "DeploySitePlaceholder", {
-      sources: [
-        s3deploy.Source.data(
-          "index.html",
-          "<html><body>Deploy frontend to S3</body></html>"
-        ),
-      ],
-      destinationBucket: siteBucket,
-      distribution: dist,
-    });
-
-    // 6) Outputs
-    new CfnOutput(this, "LakituApiBaseUrl", { value: api.url }); // ends with "/"
-    new CfnOutput(this, "LakituTableName", { value: table.tableName });
-    new CfnOutput(this, "LakituUserPoolId", { value: userPool.userPoolId });
-    new CfnOutput(this, "LakituUserPoolClientId", {
-      value: userPoolClient.userPoolClientId,
-    });
-    new CfnOutput(this, "LakituCognitoDomain", { value: domain.baseUrl() });
-    new CfnOutput(this, "LakituFrontendUrl", {
-      value: `https://${dist.domainName}`,
-    });
-    new CfnOutput(this, "LakituSiteBucketName", {
-      value: siteBucket.bucketName,
-    });
-    new CfnOutput(this, "LakituDistributionId", { value: dist.distributionId });
   }
 }

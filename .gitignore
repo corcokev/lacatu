@@ -30,6 +30,7 @@ frontend/dist/
 frontend/node_modules/
 frontend/.env*
 frontend/.vite/
+frontend/coverage/
 
 # === Java Backend ===
 backend/build/
