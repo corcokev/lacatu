@@ -17,7 +17,7 @@ export class LacatuStack extends Stack {
     const domainName = props?.domainName;
 
     // Create constructs
-    const database = new Database(this, "Database");
+    const itemsDatabase = new Database(this, "ItemsDatabase");
     const frontend = new Frontend(this, "Frontend");
 
     // Custom domain setup
@@ -32,22 +32,24 @@ export class LacatuStack extends Stack {
       domainName: customDomain?.domainName,
       distribution: frontend.distribution,
     });
-    const api = new Api(this, "Api", { userPool: auth.userPool });
-    const lambda = new LambdaFunction(this, "Lambda", {
-      tableName: database.userItemsTable.tableName,
+    const itemsApi = new Api(this, "ItemsApi", { userPool: auth.userPool });
+    const itemsLambda = new LambdaFunction(this, "ItemsLambda", {
+      tableName: itemsDatabase.userItemsTable.tableName,
       domainName: customDomain?.domainName,
     });
 
     // Grant permissions
-    lambda.grantTableAccess(database.userItemsTable);
+    itemsLambda.grantTableAccess(itemsDatabase.userItemsTable);
 
     // Add API integration
-    api.addLambdaIntegration("v1", lambda.handler);
+    itemsApi.addLambdaIntegration("v1", itemsLambda.handler);
 
     // Outputs
-    new CfnOutput(this, "ApiBaseUrl", { value: api.restApi.url });
+    new CfnOutput(this, "ItemsApiBaseUrl", { value: itemsApi.restApi.url });
+    // For backwards compatibility
+    new CfnOutput(this, "ApiBaseUrl", { value: itemsApi.restApi.url });
     new CfnOutput(this, "ItemsTableName", {
-      value: database.userItemsTable.tableName,
+      value: itemsDatabase.userItemsTable.tableName,
     });
     new CfnOutput(this, "UserPoolId", {
       value: auth.userPool.userPoolId,

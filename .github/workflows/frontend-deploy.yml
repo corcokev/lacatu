@@ -19,7 +19,7 @@ jobs:
       id-token: write
       contents: read
     outputs:
-      api-base-url: ${{ steps.outputs.outputs.api-base-url }}
+      items-api-url: ${{ steps.outputs.outputs.items-api-url }}
       user-pool-id: ${{ steps.outputs.outputs.user-pool-id }}
       client-id: ${{ steps.outputs.outputs.client-id }}
       cognito-domain: ${{ steps.outputs.outputs.cognito-domain }}
@@ -35,14 +35,14 @@ jobs:
       - name: Get stack outputs
         id: outputs
         run: |
-          API_BASE_URL=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`ApiBaseUrl`].OutputValue' --output text)
+          ITEMS_API_URL=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`ItemsApiBaseUrl`].OutputValue' --output text)
           USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)
           CLIENT_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' --output text)
           COGNITO_DOMAIN=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`CognitoDomain`].OutputValue' --output text)
           SITE_BUCKET=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`SiteBucketName`].OutputValue' --output text)
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' --output text)
           
-          echo "api-base-url=$API_BASE_URL" >> $GITHUB_OUTPUT
+          echo "items-api-url=$ITEMS_API_URL" >> $GITHUB_OUTPUT
           echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
           echo "client-id=$CLIENT_ID" >> $GITHUB_OUTPUT
           echo "cognito-domain=$COGNITO_DOMAIN" >> $GITHUB_OUTPUT
@@ -89,14 +89,14 @@ jobs:
         if: github.event_name == 'push'
         id: stack-outputs
         run: |
-          API_BASE_URL=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`ApiBaseUrl`].OutputValue' --output text)
+          ITEMS_API_URL=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`ItemsApiBaseUrl`].OutputValue' --output text)
           USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)
           CLIENT_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' --output text)
           COGNITO_DOMAIN=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`CognitoDomain`].OutputValue' --output text)
           SITE_BUCKET=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`SiteBucketName`].OutputValue' --output text)
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' --output text)
           
-          echo "api-base-url=$API_BASE_URL" >> $GITHUB_OUTPUT
+          echo "items-api-url=$ITEMS_API_URL" >> $GITHUB_OUTPUT
           echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
           echo "client-id=$CLIENT_ID" >> $GITHUB_OUTPUT
           echo "cognito-domain=$COGNITO_DOMAIN" >> $GITHUB_OUTPUT
@@ -106,12 +106,13 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend
-          API_URL=${{ github.event_name == 'push' && steps.stack-outputs.outputs.api-base-url || needs.get-infra-outputs.outputs.api-base-url }}
+          ITEMS_API_URL=${{ github.event_name == 'push' && steps.stack-outputs.outputs.items-api-url || needs.get-infra-outputs.outputs.items-api-url }}
           USER_POOL=${{ github.event_name == 'push' && steps.stack-outputs.outputs.user-pool-id || needs.get-infra-outputs.outputs.user-pool-id }}
           CLIENT_ID=${{ github.event_name == 'push' && steps.stack-outputs.outputs.client-id || needs.get-infra-outputs.outputs.client-id }}
           COGNITO_DOMAIN=${{ github.event_name == 'push' && steps.stack-outputs.outputs.cognito-domain || needs.get-infra-outputs.outputs.cognito-domain }}
           
-          echo "VITE_API_BASE_URL=$API_URL" >> .env
+          echo "VITE_ITEMS_API_URL=$ITEMS_API_URL" >> .env
+          echo "VITE_API_BASE_URL=$ITEMS_API_URL" >> .env
           echo "VITE_COGNITO_USER_POOL_ID=$USER_POOL" >> .env
           echo "VITE_COGNITO_CLIENT_ID=$CLIENT_ID" >> .env
           echo "VITE_COGNITO_DOMAIN=$COGNITO_DOMAIN" >> .env
