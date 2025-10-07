@@ -7,7 +7,7 @@ export enum FormFieldType {
   Number = "number",
   Textarea = "textarea",
   Select = "select",
-  Checkbox = "checkbox"
+  Checkbox = "checkbox",
 }
 
 export interface FormField {

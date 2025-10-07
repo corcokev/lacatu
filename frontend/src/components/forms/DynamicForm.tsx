@@ -22,7 +22,10 @@ export default function DynamicForm({
         }
         return schema;
       },
-      {} as Record<string, Yup.StringSchema | Yup.NumberSchema | Yup.BooleanSchema>,
+      {} as Record<
+        string,
+        Yup.StringSchema | Yup.NumberSchema | Yup.BooleanSchema
+      >,
     ),
   );
 
@@ -58,7 +61,7 @@ export default function DynamicForm({
           <Field
             type="checkbox"
             name={field.name}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
         );
 
@@ -92,7 +95,9 @@ export default function DynamicForm({
                     className="text-sm font-medium text-white"
                   >
                     {field.label}
-                    {field.required && <span className="ml-1 text-red-500">*</span>}
+                    {field.required && (
+                      <span className="ml-1 text-red-500">*</span>
+                    )}
                   </label>
                 </div>
               ) : (
@@ -102,7 +107,9 @@ export default function DynamicForm({
                     className="block text-sm font-medium text-white"
                   >
                     {field.label}
-                    {field.required && <span className="ml-1 text-red-500">*</span>}
+                    {field.required && (
+                      <span className="ml-1 text-red-500">*</span>
+                    )}
                   </label>
                   {renderField(field)}
                 </>
@@ -118,7 +125,7 @@ export default function DynamicForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-3 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-200"
+            className="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 font-medium text-gray-900 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Submitting..." : submitText}
           </button>
