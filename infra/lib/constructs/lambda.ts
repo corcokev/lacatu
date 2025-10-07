@@ -8,8 +8,8 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
 export interface LambdaProps {
-  tableName: string;
   domainName?: string;
+  environment?: Record<string, string>;
 }
 
 export class LambdaFunction extends Construct {
@@ -30,11 +30,11 @@ export class LambdaFunction extends Construct {
         join(dirName, "../../../backend/build/libs/backend-0.1.0-all.jar"),
       ),
       environment: {
-        USER_ITEMS_TABLE_NAME: props.tableName,
         POWERTOOLS_SERVICE_NAME: "lacatu",
         FRONTEND_ORIGIN: props.domainName
           ? `http://localhost:5173,https://${props.domainName}`
           : "http://localhost:5173,https://d3odzc270i77yq.cloudfront.net",
+        ...props.environment,
       },
     });
   }

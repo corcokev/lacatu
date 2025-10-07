@@ -50,14 +50,14 @@ jobs:
       - name: Get stack outputs
         id: stack-outputs
         run: |
-          ITEMS_API_URL=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`ItemsApiBaseUrl`].OutputValue' --output text)
+          API_BASE_URL=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`ApiBaseUrl`].OutputValue' --output text)
           USER_POOL_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)
           CLIENT_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`UserPoolClientId`].OutputValue' --output text)
           COGNITO_DOMAIN=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`CognitoDomain`].OutputValue' --output text)
           SITE_BUCKET=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`SiteBucketName`].OutputValue' --output text)
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks --stack-name LacatuStack --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' --output text)
           
-          echo "items-api-url=$ITEMS_API_URL" >> $GITHUB_OUTPUT
+          echo "api-base-url=$API_BASE_URL" >> $GITHUB_OUTPUT
           echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
           echo "client-id=$CLIENT_ID" >> $GITHUB_OUTPUT
           echo "cognito-domain=$COGNITO_DOMAIN" >> $GITHUB_OUTPUT
@@ -67,13 +67,12 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend
-          ITEMS_API_URL=${{ steps.stack-outputs.outputs.items-api-url }}
+          API_BASE_URL=${{ steps.stack-outputs.outputs.api-base-url }}
           USER_POOL=${{ steps.stack-outputs.outputs.user-pool-id }}
           CLIENT_ID=${{ steps.stack-outputs.outputs.client-id }}
           COGNITO_DOMAIN=${{ steps.stack-outputs.outputs.cognito-domain }}
           
-          echo "VITE_ITEMS_API_URL=$ITEMS_API_URL" >> .env
-          echo "VITE_API_BASE_URL=$ITEMS_API_URL" >> .env
+          echo "VITE_API_BASE_URL=$API_BASE_URL" >> .env
           echo "VITE_COGNITO_USER_POOL_ID=$USER_POOL" >> .env
           echo "VITE_COGNITO_CLIENT_ID=$CLIENT_ID" >> .env
           echo "VITE_COGNITO_DOMAIN=$COGNITO_DOMAIN" >> .env

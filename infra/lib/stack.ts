@@ -30,22 +30,26 @@ export class LacatuStack extends Stack {
       distribution: frontend.distribution,
     });
 
-    // Create items API
+    // Create shared resources
     const itemsDatabase = new Database(this, "ItemsDatabase");
-    const itemsApi = new Api(this, "ItemsApi", { userPool: auth.userPool });
-    const itemsLambda = new LambdaFunction(this, "ItemsLambda", {
-      tableName: itemsDatabase.userItemsTable.tableName,
+    const mainApi = new Api(this, "MainApi", { userPool: auth.userPool });
+
+    // Single Lambda handler for all APIs
+    const sharedLambda = new LambdaFunction(this, "SharedLambda", {
       domainName: customDomain?.domainName,
+      environment: {
+        USER_ITEMS_TABLE_NAME: itemsDatabase.userItemsTable.tableName,
+      },
     });
-    // Grant permissions
-    itemsLambda.grantTableAccess(itemsDatabase.userItemsTable);
-    // Add API integration
-    itemsApi.addLambdaIntegration("v1", itemsLambda.handler);
+
+    // Grant permissions to tables
+    sharedLambda.grantTableAccess(itemsDatabase.userItemsTable);
+
+    // Add API integrations - all routes go to the same Lambda
+    mainApi.addLambdaIntegration("v1", sharedLambda.handler);
 
     // Outputs
-    new CfnOutput(this, "ItemsApiBaseUrl", { value: itemsApi.restApi.url });
-    // For backwards compatibility
-    new CfnOutput(this, "ApiBaseUrl", { value: itemsApi.restApi.url });
+    new CfnOutput(this, "ApiBaseUrl", { value: mainApi.restApi.url });
     new CfnOutput(this, "ItemsTableName", {
       value: itemsDatabase.userItemsTable.tableName,
     });
