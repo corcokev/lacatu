@@ -68,18 +68,20 @@ The workflows automatically fetch all other values from CloudFormation stack out
 - **Custom Domain**: Route 53 + ACM certificate (optional)
 - **CI/CD**: GitHub Actions with OIDC (no long-lived credentials)
 
-## 7) Adding new services
+## 7) Adding new APIs
 
 To add new APIs (orders, users, etc.):
 
-1. Create new constructs: `OrdersDatabase`, `OrdersApi`, `OrdersLambda`
-2. Add stack outputs: `OrdersApiBaseUrl`
-3. Update workflows to inject: `VITE_ORDERS_API_URL`
-4. Reuse existing `Auth` and `Frontend` constructs
+1. Add new DynamoDB table in CDK: `OrdersDatabase` construct
+2. Add API Gateway routes pointing to the same Lambda
+3. Update Lambda code to handle new endpoints (parse request path/method)
+4. Update frontend to call new endpoints
+
+The single Lambda parses the request path and HTTP method to route to appropriate logic.
 
 ## Stack Outputs Reference
 
-- `ItemsApiBaseUrl` - Items API endpoint
+- `ApiBaseUrl` - API endpoint
 - `UserPoolId` - Cognito User Pool ID
 - `UserPoolClientId` - Cognito App Client ID
 - `CognitoDomain` - Cognito hosted UI domain
